@@ -7,6 +7,7 @@ from sklearn.metrics import classification_report, confusion_matrix, accuracy_sc
 from imblearn.over_sampling import SMOTE
 from joblib import dump, load
 from flask import Flask, request, jsonify
+import os
 
 # Step 1: Data Preprocessing
 
@@ -94,7 +95,7 @@ def preprocess_input(data):
 
 @app.route('/')
 def home():
-    return "Welcome to the Titanic Survival Prediction API!"
+    return "UAS BIG DATA"
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -126,4 +127,4 @@ def predict():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=os.getenv("PORT", default=5000))
