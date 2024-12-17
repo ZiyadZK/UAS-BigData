@@ -189,55 +189,47 @@ def data_overview():
     }
     return jsonify(overview)
 
-@app.route('/plot/age-distribution', methods=['GET'])
-def plot_age_distribution():
-    """Plot the age distribution of passengers."""
-    plt.figure(figsize=(8, 6))
-    sns.histplot(titanic_df['Age'].dropna(), bins=30, kde=True, color='skyblue')
-    plt.title("Age Distribution of Passengers")
-    plt.xlabel("Age")
-    plt.ylabel("Frequency")
-    
-    # Save plot to memory
-    img = BytesIO()
-    plt.savefig(img, format='png')
-    plt.close()
-    img.seek(0)
-    return send_file(img, mimetype='image/png')
+@app.route('/data/age-distribution', methods=['GET'])
+def age_distribution_data():
+    """Return age distribution data as JSON."""
+    age_data = titanic_df['Age'].dropna().tolist()
+    return jsonify({'age_distribution': age_data})
 
-@app.route('/plot/survival-rate-gender', methods=['GET'])
-def plot_survival_rate_gender():
-    plt.figure(figsize=(8, 6))
-    titanic_df['Survived'] = titanic_df['Survived'].map({ 'Yes': 1, 'No': 0 })
+
+@app.route('/data/survival-rate-gender', methods=['GET'])
+def survival_rate_by_gender_data():
+    """Return survival rate by gender as JSON."""
+    titanic_df['Survived'] = titanic_df['Survived'].map({'Yes': 1, 'No': 0})
     survival_rate = titanic_df.groupby('Sex')['Survived'].mean()
-    survival_rate.plot(kind='bar', color=['lightcoral', 'skyblue'])
-    plt.title("Survival Rate by Gender")
-    plt.ylabel("Survival Rate")
-    plt.xlabel("Gender")
-    plt.xticks(rotation=0)
     
-    img = BytesIO()
-    plt.savefig(img, format='png')
-    plt.close()
-    img.seek(0)
-    return send_file(img, mimetype='image/png')
+    survival_data = [
+        {'gender': gender, 'survival_rate': round(rate, 3)}
+        for gender, rate in survival_rate.items()
+    ]
+    return jsonify({'survival_rate_by_gender': survival_data})
 
-@app.route('/plot/fare-distribution', methods=['GET'])
-def plot_fare_distribution():
-    plt.figure(figsize=(8, 6))
-    sns.boxplot(x='Passenger Fare', y='Passenger Class', data=titanic_df, palette="coolwarm")
-    plt.title("Fare Distribution by Passenger Class")
-    plt.xlabel("Passenger Class")
-    plt.ylabel("Fare")
+
+@app.route('/data/fare-distribution', methods=['GET'])
+def fare_distribution_data():
+    """Return fare distribution data grouped by passenger class."""
+    fare_data = (
+        titanic_df[['Passenger Class', 'Passenger Fare']]
+        .groupby('Passenger Class')
+        .apply(lambda x: x['Passenger Fare'].tolist())
+        .to_dict()
+    )
     
-    img = BytesIO()
-    plt.savefig(img, format='png')
-    plt.close()
-    img.seek(0)
-    return send_file(img, mimetype='image/png')
+    formatted_data = [{'class': cls, 'fares': fares} for cls, fares in fare_data.items()]
+    return jsonify({'fare_distribution_by_class': formatted_data})
 
-@app.route('/plot/correlation-heatmap', methods=['GET'])
-def plot_correlation_heatmap():
+
+@app.route('/data/correlation-heatmap', methods=['GET'])
+def correlation_heatmap_data():
+    """Return correlation matrix as JSON."""
+    correlation_matrix = titanic_df.corr()
+    correlation_data = correlation_matrix.to_dict()
+    return jsonify({'correlation_matrix': correlation_data})
+
     plt.figure(figsize=(8, 6))
 
     titanic_df['Survived'] = titanic_df['Survived'].map({'Yes': 1, 'No': 0})
