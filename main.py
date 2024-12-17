@@ -1,5 +1,5 @@
 import numpy as np
-from joblib import dump, load
+from joblib import load
 from flask import Flask, request, jsonify
 import os
 from flask_cors import CORS
@@ -14,7 +14,7 @@ def home():
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-
+        # Allowed model names
         allowed_model_name = [
             'gaussiannb_model',
             'knn_model',
@@ -22,11 +22,12 @@ def predict():
             'svm_model'
         ]
 
+        # Retrieve model name from query or use default
         model_name = request.args.get('model', 'logistic_regression_model')
-
         if model_name not in allowed_model_name:
             model_name = 'logistic_regression_model'
 
+        # Load the model
         model = load(model_name + '.joblib')
 
         # Get JSON data from the request
@@ -43,13 +44,22 @@ def predict():
             int(input_data['Port of Embarkation'])
         ]).reshape(1, -1)
 
-
-        prediction = model.predict(features)
-
         # Make prediction
-        return jsonify({ 
+        prediction = model.predict(features)
+        probabilities = model.predict_proba(features)  # Get class probabilities
+
+        # Convert probabilities to floats out of 100
+        prob_not_survived = round(probabilities[0][0] * 100, 1)
+        prob_survived = round(probabilities[0][1] * 100, 1)
+
+        # Response JSON
+        return jsonify({
             'model_name': model_name,
-            'survived': True if int(prediction[0]) == 1 else False
+            'survived': True if int(prediction[0]) == 1 else False,
+            'probabilities': {
+                'not_survived': prob_not_survived,
+                'survived': prob_survived
+            }
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
